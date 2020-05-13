@@ -1,0 +1,4 @@
+.vscode/
+db.sqlite3
+env/
+vendorwebsite/__pycache__
