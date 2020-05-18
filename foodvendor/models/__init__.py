@@ -1,1 +1,1 @@
-from .models import Auth, Vendor
+from .models import Auth, Vendor, Menu
