@@ -3,3 +3,4 @@ db.sqlite3
 env/
 vendorwebsite/__pycache__
 .env
+**/__pycache__
