@@ -1,1 +1,1 @@
-from .vendor import SignUp, SetPassword, LoginUser
+from .vendor import SignUp, SetPassword, LoginUser, Menu, MenuDetail

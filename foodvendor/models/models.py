@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 
-from .managers import CustomUserManager
+# from .managers import CustomUserManager
 
 # Create your models here.
 class Auth(AbstractBaseUser):
@@ -16,7 +17,7 @@ class Auth(AbstractBaseUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['password',]
     
-    objects = CustomUserManager()
+    # objects = CustomUserManager()
 
     def __str__(self):
         return self.email
@@ -44,7 +45,7 @@ class Menu(models.Model):
     description = models.CharField( max_length=255)
     price = models.FloatField(default = 0.00)
     quantity = models.IntegerField()
-    is_recurring = models.BooleanField(choices=BOOL_CHOICES)
-    frequencyOfReocurrence = models.CharField( max_length=255)
+    is_recurring = models.BooleanField(choices = BOOL_CHOICES)
+    freq_of_reocurrence = ArrayField(models.CharField(max_length=10, blank=True),size=8,default=list)
     date_time_created = models.DateTimeField(auto_now_add=True)
 
