@@ -1,1 +1,1 @@
-from .customer import SignUp, SetPassword, LoginUser
+from .customers import SignUp, SetPassword, LoginUser
