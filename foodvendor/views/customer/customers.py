@@ -10,13 +10,29 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 
 class SignUp(APIView):
+    """
+    List all users, or create a new user.
+    """
+    def get(self, request, format=None):
+        users = Customer.objects.all()
+        serializer = CustomerSerializer(users, many=True)
+        return Response(serializer.data)
+
     def post(self, request, format = None):
 
         serializer = CustomerSerializer(data=request.data)
         data = request.data
+        print(data)
+        email = data['email']
+        password ="pass"
+        userdata = {'email': email,'password':password}
+        print(userdata)
+        authseuserdatarializer = AuthSerializer(data=userdata)
         print(data['email'])
         if serializer.is_valid():
             serializer.save()
+            authseuserdatarializer.is_valid()
+            authseuserdatarializer.save()
             to = [data['email']]
             base_url =  config("BASE_URL")
             set_password_url = config("SET_PASSWORD_URL", default="http://localhost:3000/reset-password")
