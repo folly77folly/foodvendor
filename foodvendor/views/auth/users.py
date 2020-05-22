@@ -1,9 +1,10 @@
 from django.http import Http404
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from ...serializers import CustomerSerializer, AuthSerializer, OrderSerializer
-from ...models import Customer,Auth, Orders as OrderModel
+from ...models import Customer, Auth, Orders as OrderModel
 from ..helpers import id_generator
 from decouple import config
 from rest_framework.authtoken.models import Token
@@ -64,7 +65,11 @@ class LoginUser(APIView):
         if user is None :
             response = {"message" : "Incorrect username or password details"}
             return Response(response, status = status.HTTP_400_BAD_REQUEST)
-        response = {"message" : "You are logged in welcome back"}
+        user_token = get_token(request)
+        response = {
+            "message" : "You are logged in welcome back",
+            "token" : user_token
+            }
         return Response(response, status =  status.HTTP_200_OK)
 
 def createuser(request, reference_id, user_type):
@@ -76,3 +81,34 @@ def createuser(request, reference_id, user_type):
     authseuserdatarializer = AuthSerializer(data=userdata)
     if authseuserdatarializer.is_valid():
         authseuserdatarializer.save()
+
+@api_view(['POST'])
+def get_user_token(request):
+    # serializer = AuthSerializer(data=request.data)
+    user_obj = Auth.objects.get(email = request.data['email'])
+    if request.method == 'POST':
+        token = Token.objects.filter(user=user_obj)
+        if token:
+            new_key = token[0].generate_key()
+            token.update(key=new_key)
+            print(new_key)
+            return Response({"token":new_key})
+        else:
+            token = Token.objects.create(user = user_obj)
+            print(token.key)
+            return Response({"token":token.key})
+
+def get_token(request):
+    # serializer = AuthSerializer(data=request.data)
+    user_obj = Auth.objects.get(email = request.data['email'])
+    if request.method == 'POST':
+        token = Token.objects.filter(user=user_obj)
+        if token:
+            new_key = token[0].generate_key()
+            token.update(key=new_key)
+            print(new_key)
+            return new_key
+        else:
+            token = Token.objects.create(user = user_obj)
+            print(token.key)
+            return token.key

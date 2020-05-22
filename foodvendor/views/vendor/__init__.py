@@ -1,1 +1,1 @@
-from .vendor import VendorSignUp, Menu, MenuDetail, OrderStatus
+from .vendor import VendorSignUp, Menu, MenuDetail, OrderStatus, OrderDetail
