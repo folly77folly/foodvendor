@@ -1,0 +1,1 @@
+from .myfunc import id_generator, sendmail
