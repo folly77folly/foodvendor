@@ -33,6 +33,9 @@ class Vendor(models.Model):
     phone_number = models.CharField(max_length=11)
     date_time_created = models.DateTimeField( auto_now_add=True)
 
+    def __str__(self):
+        return self.email
+
 class Customer(models.Model):
     first_name = models.CharField( max_length=255)
     last_name = models.CharField( max_length=255)
@@ -40,6 +43,9 @@ class Customer(models.Model):
     phone_number = models.CharField(max_length=11)
     date_time_created = models.DateTimeField(auto_now_add=True)
     amount_outstanding = models.FloatField(default = 0.00)
+
+    def __str__(self):
+        return self.email    
 
 class Menu(models.Model):
     BOOL_CHOICES = ((True, 'Yes'), (False, 'No'))
@@ -52,6 +58,9 @@ class Menu(models.Model):
     is_recurring = models.BooleanField(choices = BOOL_CHOICES)
     freq_of_reocurrence = ArrayField(models.CharField(max_length=10, blank=True),size=8,default=[])
     date_time_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 
 class OrderStatus(models.Model):
     name = models.CharField(max_length=50)

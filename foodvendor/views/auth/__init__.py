@@ -1,1 +1,1 @@
-from .users import SetPassword, LoginUser, createuser
+from .users import SetPassword, LoginUser, createuser, get_user_token
