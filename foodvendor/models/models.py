@@ -82,15 +82,14 @@ class Orders(models.Model):
     date_time_created = models.DateTimeField(auto_now_add=True)
     
 
-class MessageStatus(OrderStatus):
-    pass
+class MessageStatus(models.Model):
+    name = models.CharField(max_length=50)
 
-# class Notification(models.Model):
-#     subject_user = models.CharField(max_length=100)
-#     sender_id = models.foreign_key(Auth, on_delete = models.CASCADE)
-#     reciever_id = models.foreign_key(Auth, on_delete = models.CASCADE)
-#     message_id = models.foreign_key(MessageStatus, on_delete = models.CASCADE)
-#     message = models.CharField(max_length=255)
-#     date_time_created = models.DateTimeField(auto_now_add=True)
+class Notification(models.Model):
+    sender = models.ForeignKey(Vendor, on_delete = models.CASCADE)
+    reciever = models.ForeignKey(Customer, on_delete = models.CASCADE)
+    order = models.ForeignKey(Orders, on_delete = models.CASCADE)
+    message = models.ForeignKey(MessageStatus, on_delete = models.CASCADE)
+    date_time_created = models.DateTimeField(auto_now_add=True)
 
 

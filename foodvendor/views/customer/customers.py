@@ -3,14 +3,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from ...serializers import CustomerSerializer, AuthSerializer, OrderSerializer
-from ...models import Customer,Auth, Orders as OrderModel
+from ...models import Customer,Auth, Orders as OrderModel, Menu as MenuModel
 from django.core.mail import send_mail
 from decouple import config
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
 from django.utils import timezone
 from ..helpers import id_generator,sendmail
 from ..auth import createuser
+from rest_framework.permissions import IsAuthenticated
 
 
 class SignUp(APIView):
@@ -36,78 +35,61 @@ class SignUp(APIView):
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 
-# class SetPassword(APIView):
-#     """
-#     List all users, or create a new user.
-#     """
-#     def get_object(self, pk):
-#         try:
-#             return Auth.objects.get(reference_id=pk)
-#         except Auth.DoesNotExist:
-#             raise Http404
-        
-#     def get(self, request, format=None):
-#         users = Auth.objects.all()
-#         serializer = AuthSerializer(users, many=True)
-#         return Response(serializer.data)
-
-#     def post(self, request, format = None):
-#         serializer = AuthSerializer(data=request.data)
-#         data = request.data
-#         # token = Token.objects.create(user = data)
-#         print(data)
-#         # print(token)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status =  status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-
-#     def put(self, request, pk, format=None):
-#         user = self.get_object(pk)
-#         now = timezone.now()
-#         if now < user.date_expiry :
-#             user_obj = Auth.objects.get(email = user)
-#             new_password = request.data['password']
-#             user_obj.set_password(new_password)
-#             user_obj.save()
-#             return Response( status =  status.HTTP_201_CREATED)
-#         message ={"message":"The password reset link has exipred"}
-#         return Response(message,status = status.HTTP_400_BAD_REQUEST)
-
-
-# class LoginUser(APIView):
-#     """
-#     List all users, or create a new user.
-#     """
-#     def post(self, request, format = None):
-#         data = request.data
-#         email = data['email']
-#         password = data['password']
-#         user = authenticate(email = email, password = password)
-#         if user is None :
-#             response = {"message" : "Incorrect username or password details"}
-#             return Response(response, status = status.HTTP_400_BAD_REQUEST)
-#         response = {"message" : "You are logged in welcome back"}
-#         return Response(response, status =  status.HTTP_200_OK)
-
-
 class Order(APIView):
+    permission_classes = (IsAuthenticated,) 
     """
-    List all snippets, or create a new snippet.
+    List all orders, or create a new order.
     """
+    def get_object(self, pk):
+        try:
+            return MenuModel.objects.get(pk=pk)
+        except MenuModel.DoesNotExist:
+            raise Http404
+
     def get(self, request, format=None):
-        order = OrderModel.objects.all()
+        # order = OrderModel.objects.all()
+        customer_obj = customer_details(request.user)
+        order = OrderModel.objects.filter(customer = customer_obj.id)
         serializer = OrderSerializer(order, many=True)
         return Response(serializer.data)
 
     def post(self, request, format=None):
-        serializer  = OrderSerializer(data=request.data)
+        current_user = request.user
+        customer_obj = customer_details(current_user)
+        print(customer_obj.id)
+        data = request.data
+        menus = data['items_ordered']
+        if menus == []:
+            message = {"message":"No order(s) made"}
+            return Response(message, status = status.HTTP_400_BAD_REQUEST)
+        vendor_id = self.get_object(menus[0]).vendor_id
+        amount_due = sum([self.get_object(menu).price for menu in menus])
+        print(amount_due)
+        if data['amount_paid'] != amount_due :
+            message = {"message":f"amount paid must be equal to amount due. Ensure to pay {amount_due} naira to complete your order"}
+            return Response(message, status = status.HTTP_400_BAD_REQUEST)
+        order_data = {
+        "description" : data['description'],
+        "items_ordered" : data['items_ordered'],
+        "amount_due" : amount_due,
+        "amount_paid" : data['amount_paid'],
+        "amount_outstanding" : 0,
+        "paid" : True,
+        "vendor" : vendor_id,
+        "customer" : customer_obj.id,
+        "delivery_date_time" : data['delivery_date_time'],
+        "order_status_id" : 1
+        }        
+        serializer  = OrderSerializer(data=order_data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            message = {"message":"Your Order has been Placed successfully"}
+            # send_notification
+            return Response(message, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class OrderDetail(APIView):
+class CustomerOrderDetail(APIView):
+    permission_classes = (IsAuthenticated,) 
     """
     Retrieve, update or delete a snippet instance.
     """
@@ -134,3 +116,8 @@ class OrderDetail(APIView):
         menu = self.get_object(pk)
         menu.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def customer_details(user_email):
+    Customer_object = Customer.objects.get(email=user_email)
+    return Customer_object

@@ -2,8 +2,8 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from ...serializers import VendorSerializer, AuthSerializer, MenuSerializer, OrderStatusSerializer, OrdersSerializer
-from ...models import Vendor, Auth, Menu as MenuModel, OrderStatus as OrderStatusModel, Orders as OrderModel
+from ...serializers import VendorSerializer, AuthSerializer, MenuSerializer, OrderStatusSerializer, OrdersSerializer, MessageStatusSerializer
+from ...models import Vendor, Auth, Menu as MenuModel, OrderStatus as OrderStatusModel, Orders as OrderModel, MessageStatus as MessageStatusModel
 from django.core.mail import send_mail
 from decouple import config
 from rest_framework.authtoken.models import Token
@@ -120,7 +120,7 @@ class MenuDetail(APIView):
         menu.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class OrderDetail(APIView):
+class VendorOrderDetail(APIView):
     permission_classes = (IsAuthenticated,) 
     """
     Retrieve, update or delete a snippet instance.
@@ -146,15 +146,35 @@ class OrderDetail(APIView):
         order = self.get_object(pk)
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(order.vendor_id)
+        print(request.data)
+        order_status = {"order_status" : request.data["order_status"]}
+        print(order_status)
         if order.vendor_id != vendor_obj.id:
             message = {"message":"This Order does not belong to you, Update is not Allowed"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)
-        serializer = OrdersSerializer(order, data=request.data, partial = True)
+        serializer = OrdersSerializer(order, data=order_status, partial = True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VendorSales(APIView):
+    permission_classes = (IsAuthenticated,) 
+    """
+    Retrieve, all sales report.
+    """
+
+    def get(self, request, format=None):
+        current_user = request.user
+        vendor_obj = vendor_details(current_user)
+        print(request.data["date_time_created"])
+        record_date =  request.data["date_time_created"]
+        queryset = OrderModel.objects.filter(date_time_created=record_date)
+        serializer = OrdersSerializer(queryset, many=True)
+        # serializer = MenuSerializer(menu)
+        return Response(serializer.data)
+
 
 
 class OrderStatus(APIView):
@@ -172,6 +192,23 @@ class OrderStatus(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MessageStatus(APIView):
+    """
+    List all order status, or create a new order status.
+    """
+    def get(self, request, format=None):
+        message_status = MessageStatusModel.objects.all()
+        serializer = MessageStatusSerializer(message_status, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer  = MessageStatusSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 def vendor_details(user_email):
     Vendor_object = Vendor.objects.get(email=user_email)

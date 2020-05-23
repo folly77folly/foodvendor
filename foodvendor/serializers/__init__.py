@@ -1,3 +1,3 @@
-from .vendor_serializers import VendorSerializer, MenuSerializer, OrderStatusSerializer, OrdersSerializer
+from .vendor_serializers import VendorSerializer, MenuSerializer, OrderStatusSerializer, OrdersSerializer, MessageStatusSerializer
 from .auth_serializers import AuthSerializer
 from .customer_serializers import CustomerSerializer, OrderSerializer

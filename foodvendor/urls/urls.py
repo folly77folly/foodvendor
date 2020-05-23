@@ -1,6 +1,6 @@
 from django.conf.urls import  url
 from ..views import views
-from ..views.vendor import VendorSignUp, Menu, MenuDetail, OrderStatus, OrderDetail
+from ..views.vendor import VendorSignUp, Menu, MenuDetail, OrderStatus, VendorOrderDetail, VendorSales, MessageStatus
 from ..views.customer import SignUp,  Order
 from ..views.auth import SetPassword, LoginUser, get_user_token
 from django.urls import path
@@ -17,10 +17,12 @@ urlpatterns = [
     # path('api/v.1/vendor/menu', Menu.as_view(), name = 'menu'),
     path('api/v.1/vendor/menu', Menu.as_view(), name = 'menu'),
     path('api/v.1/vendor/menu/<int:pk>', MenuDetail.as_view(), name = 'menudetail'),
-    path('api/v.1/vendor/order/<int:pk>', OrderDetail.as_view(), name = 'orderdetail'),
+    path('api/v.1/vendor/order/<int:pk>', VendorOrderDetail.as_view(), name = 'vendororderdetail'),
+    path('api/v.1/vendor/sales', VendorSales.as_view(), name = 'vendororderdetail'),
 
     path('api/v.1/customer/signup', SignUp.as_view(), name = 'customersignup'),
     path('api/v.1/orderstatus', OrderStatus.as_view(), name = 'orderstatus'),
-    path('api/v.1/order', Order.as_view(), name = 'order'),
+    path('api/v.1/messagestatus', MessageStatus.as_view(), name = 'orderstatus'),
+    path('api/v.1/customer/order', Order.as_view(), name = 'order'),
     path('api/v.1/order/<id>', Order.as_view(), name = 'orderdetail'),
 ]
