@@ -42,6 +42,8 @@ class SetPassword(APIView):
         user = self.get_object(pk)
         print(user)
         now = timezone.now()
+        print(now)
+        print(user.date_expiry)
         if now < user.date_expiry :
             user_obj = Auth.objects.get(email = user)
             new_password = request.data['password']
