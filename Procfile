@@ -1,1 +1,1 @@
-web : gunicon foodvendorapp.wsgi
+web : gunicon foodvendorapp.wsgi --log-file -
