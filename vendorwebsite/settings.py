@@ -87,7 +87,7 @@ EMAIL_PORT = config('EMAIL_PORT', cast=int)
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-prod_db  =  dj_database_url.config(conn_max_age=500)
+# prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -98,7 +98,7 @@ DATABASES = {
         'PORT' : config('DATABASE_PORT')
     }
 }
-DATABASES['default'].update(prod_db)
+# DATABASES['default'].update(prod_db)
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
