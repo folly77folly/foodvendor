@@ -1,0 +1,1 @@
+web : gunicon foodvendorapp.wsgi

@@ -25,8 +25,15 @@ class SignUp(APIView):
         return Response(serializer.data)
 
     def post(self, request, format = None):
-        serializer = CustomerSerializer(data=request.data)
+        #check if user exists
         user_type = SignUp.user_type
+        user_email = request.data['email']
+        query_user = Auth.objects.filter(email = user_email,user_type = user_type)
+        if query_user:
+            message = {"message" : "user with this email already exists"}
+            return Response(message, status = status.HTTP_400_BAD_REQUEST)
+        serializer = CustomerSerializer(data=request.data)
+        
         subject = "Customer Signup Registration"
         reference_id = id_generator()
         if serializer.is_valid():
