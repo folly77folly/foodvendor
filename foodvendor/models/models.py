@@ -7,15 +7,18 @@ from django.utils import timezone
 
 from .managers import CustomUserManager
 
+def expiry_time():
+       return timezone.now() + timezone.timedelta(minutes=10)
 # Create your models here.
 class Auth(AbstractBaseUser):
+
     email = models.EmailField( max_length=60, unique = True)
     password = models.CharField(max_length=255)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     reference_id = models.CharField(max_length = 30)
     user_type = models.IntegerField(default = 1)
-    date_expiry = models.DateTimeField(default = timezone.now()+ timezone.timedelta(minutes = 10), blank=True)
+    date_expiry = models.DateTimeField(default = expiry_time(), blank=True)
     date_time_created = models.DateTimeField(auto_now_add=True)
 
 
@@ -45,7 +48,9 @@ class Customer(models.Model):
     amount_outstanding = models.FloatField(default = 0.00)
 
     def __str__(self):
-        return self.email    
+        return self.email
+    def update_balance(self, amount):
+        return self.amount_outstanding + amount
 
 class Menu(models.Model):
     BOOL_CHOICES = ((True, 'Yes'), (False, 'No'))
@@ -66,6 +71,9 @@ class Menu(models.Model):
 class OrderStatus(models.Model):
     name = models.CharField(max_length=50)
 
+class PaymentStatus(models.Model):
+    name = models.CharField(max_length=50)  
+
 class Orders(models.Model):
     BOOL_CHOICES = ((True, 'Yes'), (False, 'No'))
 
@@ -76,9 +84,9 @@ class Orders(models.Model):
     amount_due = models.FloatField(default = 0.00)
     amount_paid = models.FloatField(default = 0.00)
     amount_outstanding = models.FloatField(default = 0.00)
-    paid = models.BooleanField(choices = BOOL_CHOICES, default = False)
-    order_status = models.ForeignKey(OrderStatus, on_delete=models.CASCADE, default=1)
-    cancel_expiry = models.DateTimeField(default = timezone.now()+ datetime.timedelta(minutes = 10), blank=True)
+    payment_status = models.ForeignKey(PaymentStatus, on_delete = models.CASCADE)
+    order_status = models.ForeignKey(OrderStatus, on_delete = models.CASCADE, default=1)
+    cancel_expiry = models.DateTimeField(default = expiry_time(), blank=True)
     delivery_date_time = models.DateTimeField(default = timezone.now(), blank=True)
     date_time_created = models.DateTimeField(auto_now_add=True)
     

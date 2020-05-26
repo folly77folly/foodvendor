@@ -28,7 +28,7 @@ class VendorSignUp(APIView):
             serializer.save()
             createuser(request, reference_id, user_type)
             sendmail(request, reference_id, subject)
-            message = {"message":"Account created successfully a password reset link has been sent to your email account"}
+            message = {"message":"Account created successfully a password reset link has been sent to your email account. Link expires in 10 mins"}
             return Response(message, status =  status.HTTP_201_CREATED)
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
@@ -61,9 +61,10 @@ class Menu(APIView):
         business_name = vendor_obj.business_name
         cust_list =  list(Customer.objects.all().values_list('id',flat=True))
         data = request.data
-        
+
         #checking if order is recurring or not
-        if data['is_recurring'] == True:
+        print(data['is_recurring'])
+        if data['is_recurring'] == "True":
             menu_data = {
             "name" : data['name'],
             "description" : data['description'],
@@ -81,7 +82,8 @@ class Menu(APIView):
             "quantity" : data['quantity'],
             "is_recurring" : data['is_recurring'],
             "vendor" : vendor_obj.id
-            }            
+            }
+        print(menu_data)         
         serializer  = MenuSerializer(data=menu_data)
         if serializer.is_valid():
             serializer.save()
@@ -95,7 +97,7 @@ class Menu(APIView):
 class MenuDetail(APIView):
     permission_classes = (IsAuthenticated,) 
     """
-    Retrieve, update or delete a snippet instance.
+    Retrieve, update or delete a menu instance.
     """
     def get_object(self, pk):
         try:
@@ -166,6 +168,10 @@ class VendorOrderDetail(APIView):
         current_user = request.user
         vendor_obj = vendor_details(current_user)
         print(request.data)
+        if len(request.data) != 1 or 'order_status' not in request.data:
+            message = {"message":"you are only allowed to update order status from customer order"}
+            return Response(message, status = status.HTTP_400_BAD_REQUEST)
+        
         order_status = {"order_status" : request.data["order_status"]}
         print(order_status)
         if order.vendor_id != vendor_obj.id:
@@ -184,6 +190,10 @@ class VendorSales(APIView):
     Retrieve, all sales report for a date.
     """
     def get(self, request, format=None):
+        if 'date_time_created' not in request.data:
+            message ={"message":"this request requires date_time_created e.g 2020-05-25"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
         current_user = request.user
         vendor_obj = vendor_details(current_user)
         search_date = request.data["date_time_created"]
