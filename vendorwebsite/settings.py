@@ -25,9 +25,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'l%5pybv(z&7l*35qxczx2g_0*ay!r2w2#ppx6t*zshwy=kj=b-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['vggfoodvendor.heroku.com','127.0.0.1']
+ALLOWED_HOSTS = ['vggfoodvendorapp.herokuapp.com','127.0.0.1']
 
 
 # Application definition

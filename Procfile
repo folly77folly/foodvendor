@@ -1,1 +1,1 @@
-web : gunicon foodvendorapp.wsgi --log-file -
+web: gunicorn vendorwebsite.wsgi
