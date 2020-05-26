@@ -25,15 +25,11 @@ class SetPassword(APIView):
     def get(self, request, pk, format=None):
         user = self.get_object(pk)
         message = {"message":f"{user},use a PUT request to set your password"}
-        # serializer = AuthSerializer(user)
         return Response(message, status = status.HTTP_200_OK)
 
     def put(self, request, pk, format=None):
         user = self.get_object(pk)
-        print(user)
         now = timezone.now()
-        print(now)
-        print(user.date_expiry)
         if now < user.date_expiry :
             user_obj = Auth.objects.get(email = user)
             new_password = request.data['password']
@@ -78,33 +74,27 @@ def createuser(request, reference_id, user_type):
 
 @api_view(['POST'])
 def get_user_token(request):
-    # serializer = AuthSerializer(data=request.data)
     user_obj = Auth.objects.get(email = request.data['email'])
     if request.method == 'POST':
         token = Token.objects.filter(user=user_obj)
         if token:
             new_key = token[0].generate_key()
             token.update(key=new_key)
-            print(new_key)
             return Response({"token":new_key})
         else:
             token = Token.objects.create(user = user_obj)
-            print(token.key)
             return Response({"token":token.key})
 
 def get_token(request):
-    # serializer = AuthSerializer(data=request.data)
     user_obj = Auth.objects.get(email = request.data['email'])
     if request.method == 'POST':
         token = Token.objects.filter(user=user_obj)
         if token:
             new_key = token[0].generate_key()
             token.update(key=new_key)
-            print(new_key)
             return new_key
         else:
             token = Token.objects.create(user = user_obj)
-            print(token.key)
             return token.key
 
 def update_last_login(email):
