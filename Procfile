@@ -1,1 +1,1 @@
-web : gunicon foodvendorapp.wsgi
+web : gunicorn foodvendorapp.wsgi
