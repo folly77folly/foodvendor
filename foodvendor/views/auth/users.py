@@ -28,7 +28,7 @@ class SetPassword(APIView):
         # serializer = AuthSerializer(user)
         return Response(message, status = status.HTTP_200_OK)
 
-    def post(self, request, pk, format=None):
+    def put(self, request, pk, format=None):
         user = self.get_object(pk)
         print(user)
         now = timezone.now()
@@ -49,10 +49,12 @@ class LoginUser(APIView):
     """
     List all users, or create a new user.
     """
+    
+
     def post(self, request, format = None):
-        # data = request.data
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+        data = request.data
+        email = data['email']
+        password = data['password']
         user = authenticate(email = email, password = password)
         if user is None :
             response = {"message" : "Incorrect username or password details"}
@@ -62,13 +64,13 @@ class LoginUser(APIView):
             "message" : "You are logged in welcome back",
             "token" : user_token
             }
+        update_last_login(email)
         return Response(response, status =  status.HTTP_200_OK)
 
 def createuser(request, reference_id, user_type):
     data = request.data
     email = data['email']
     default_password = config("DEFAULT_PASSWORD")
-    user_type = 1
     userdata = {'email': email,'password':default_password, 'reference_id':reference_id, 'user_type' : user_type }
     authseuserdatarializer = AuthSerializer(data=userdata)
     if authseuserdatarializer.is_valid():
@@ -104,3 +106,10 @@ def get_token(request):
             token = Token.objects.create(user = user_obj)
             print(token.key)
             return token.key
+
+def update_last_login(email):
+    user_obj = Auth.objects.get(email = email)
+    update_data ={"last_login":timezone.now()}
+    serializer = AuthSerializer(user_obj, data = update_data, partial = True)
+    if serializer.is_valid():
+        serializer.save()

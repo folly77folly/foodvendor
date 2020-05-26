@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 from decouple import config
+import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +27,7 @@ SECRET_KEY = 'l%5pybv(z&7l*35qxczx2g_0*ay!r2w2#ppx6t*zshwy=kj=b-'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['vggfoodvendor.heroku.com']
 
 
 # Application definition
@@ -46,6 +47,7 @@ AUTH_USER_MODEL = 'foodvendor.Auth'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,17 +87,18 @@ EMAIL_PORT = config('EMAIL_PORT', cast=int)
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
+prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'zykdjpny',
-        'HOST' : 'rajje.db.elephantsql.com',
-        'USER' : 'zykdjpny',
-        'PASSWORD' : 'nrqBkYXZ0nmfNj-BXfyhKgPRZ_bpYdF1',
-        'PORT' : '5432'
+        'NAME': config('DATABASE_NAME'),
+        'HOST' : config('DATABASE_HOST'),
+        'USER' : config('DATABASE_USER'),
+        'PASSWORD' : config('DATABASE_PASSWORD'),
+        'PORT' : config('DATABASE_PORT')
     }
 }
+DATABASES['default'].update(prod_db)
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -139,4 +142,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
+# STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static")
+]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
