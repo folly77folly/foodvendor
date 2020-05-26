@@ -138,7 +138,7 @@ class MenuDetail(APIView):
 class VendorOrderDetail(APIView):
     permission_classes = (IsAuthenticated,) 
     """
-    Retrieve, update or delete a snippet instance.
+    Retrieve, update  an order instance.
     """
     def get_object(self, pk):
         try:
