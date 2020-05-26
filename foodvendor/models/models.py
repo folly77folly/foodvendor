@@ -9,6 +9,7 @@ from .managers import CustomUserManager
 
 def expiry_time():
        return timezone.now() + timezone.timedelta(minutes=10)
+
 # Create your models here.
 class Auth(AbstractBaseUser):
 

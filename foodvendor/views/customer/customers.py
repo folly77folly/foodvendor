@@ -86,10 +86,8 @@ class Order(APIView):
         
     def update_balance (self, customer_obj, charge_amt):
         old_balance = customer_obj.amount_outstanding
-        print(customer_obj.amount_outstanding)
         new_balance = old_balance + (charge_amt)
         user_data = {"amount_outstanding":new_balance}
-        print(user_data)
         serializer = CustomerSerializer(customer_obj, data=user_data, partial = True)  
         if serializer.is_valid():
             serializer.save()
@@ -116,7 +114,6 @@ class Order(APIView):
                 return Response(message, status = status.HTTP_400_BAD_REQUEST)         
         
         amount_due = sum([self.get_object(menu).price for menu in menus])
-        print(amount_due)
         message = {'message':f"total amount due {amount_due}"}
         return Response(message, status = status.HTTP_200_OK)
 
@@ -129,7 +126,6 @@ class Order(APIView):
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         customer_obj = customer_details(current_user)
-        print(customer_obj.id)
 
         #collecting all requests for validations
         data = request.data
@@ -151,7 +147,6 @@ class Order(APIView):
 
         #calculating the sum of all ordered items
         amount_due = sum([self.get_object(menu).price for menu in menus])
-        print(amount_due)
         paid = data['amount_paid']
 
         #checking that a positive amount is paid
@@ -247,8 +242,6 @@ class CustomerOrderDetail(APIView):
         menu = self.get_object(pk)
         #checking if the order url belongs to logged in user
         cust_obj  = customer_details(request.user)
-        print(cust_obj.id)
-        print(menu.customer_id)
         if cust_obj.id != menu.customer_id :
             message = {"message": "The Selected Order does not belong to you"}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
@@ -270,10 +263,8 @@ class CancelOrder(APIView):
     
     def update_balance (self, customer_obj, charge_amt):
         old_balance = customer_obj.amount_outstanding
-        print(customer_obj.amount_outstanding)
         new_balance = old_balance -  (charge_amt)
         user_data = {"amount_outstanding":new_balance}
-        print(user_data)
         serializer = CustomerSerializer(customer_obj, data=user_data, partial = True)  
         if serializer.is_valid():
             serializer.save()
@@ -284,21 +275,18 @@ class CancelOrder(APIView):
 
         #checking if the order url belongs to logged in user
         cust_obj  = customer_details(request.user)
-        print(cust_obj.id)
-        print(order.customer_id)
+
         if cust_obj.id != order.customer_id :
             message = {"message": "The Selected Order does not belong to you"}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
         
         #checking if the order has not been updated by vendor away from pending and cancel
-        print(order.order_status_id)
         if order.order_status_id != 1:
             status_name = OrderStatus.objects.get(pk = order.order_status_id)
             message = {"message": f"This Order cannot be cancelled its now {status_name.name}"}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         #checking if the order has not been updated by vendor away from pending and cancel
-        print(order.order_status_id)
         now  = timezone.now()
         if now > order.cancel_expiry :  
             message = {"message": "This order cancellation time is expired "}
