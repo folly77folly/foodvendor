@@ -1,0 +1,30 @@
+[
+    {
+      "model": "foodvendor.paymentstatus",
+      "pk": 1,
+      "fields": {
+        "name": "no payment"
+      }
+    },
+    {
+        "model": "foodvendor.paymentstatus",
+        "pk": 2,
+        "fields": {
+          "name": "part payment"
+        }
+      },
+      {
+        "model": "foodvendor.paymentstatus",
+        "pk": 3,
+        "fields": {
+          "name": "full payment"
+        }
+      },
+      {
+        "model": "foodvendor.paymentstatus",
+        "pk": 4,
+        "fields": {
+          "name": "excess payment"
+        }
+      }
+  ]

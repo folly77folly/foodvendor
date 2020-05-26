@@ -14,7 +14,7 @@ from django.utils import timezone
 
 class SetPassword(APIView):
     """
-    List all users, or create a new user.
+    list a user ,Set your password
     """
     def get_object(self, pk):
         try:
@@ -22,23 +22,13 @@ class SetPassword(APIView):
         except Auth.DoesNotExist:
             raise Http404
         
-    def get(self, request, format=None):
-        users = Auth.objects.all()
-        serializer = AuthSerializer(users, many=True)
-        return Response(serializer.data)
+    def get(self, request, pk, format=None):
+        user = self.get_object(pk)
+        message = {"message":f"{user},use a PUT request to set your password"}
+        # serializer = AuthSerializer(user)
+        return Response(message, status = status.HTTP_200_OK)
 
-    def post(self, request, format = None):
-        serializer = AuthSerializer(data=request.data)
-        data = request.data
-        # token = Token.objects.create(user = data)
-        print(data)
-        # print(token)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status =  status.HTTP_201_CREATED)
-        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk, format=None):
+    def post(self, request, pk, format=None):
         user = self.get_object(pk)
         print(user)
         now = timezone.now()
@@ -60,9 +50,9 @@ class LoginUser(APIView):
     List all users, or create a new user.
     """
     def post(self, request, format = None):
-        data = request.data
-        email = data['email']
-        password = data['password']
+        # data = request.data
+        email = request.POST.get('email')
+        password = request.POST.get('password')
         user = authenticate(email = email, password = password)
         if user is None :
             response = {"message" : "Incorrect username or password details"}

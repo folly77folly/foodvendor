@@ -17,6 +17,8 @@ class SignUp(APIView):
     """
     List all users, or create a new user.
     """
+    user_type = 2                       #usertype for customers
+
     def get(self, request, format=None):
         users = Customer.objects.all()
         serializer = CustomerSerializer(users, many=True)
@@ -24,14 +26,14 @@ class SignUp(APIView):
 
     def post(self, request, format = None):
         serializer = CustomerSerializer(data=request.data)
-        user_type = 2
+        user_type = SignUp.user_type
         subject = "Customer Signup Registration"
         reference_id = id_generator()
         if serializer.is_valid():
             serializer.save()
             createuser(request, reference_id, user_type)
             sendmail(request, reference_id, subject)
-            message = {"message":"A password reset link has been sent to your email account"}
+            message = {"message":"A password reset link has been sent to your email account. Link expires in 10 mins"}
             return Response(message, status =  status.HTTP_201_CREATED)
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
@@ -41,11 +43,23 @@ class AllMenu(APIView):
     """
     List all menus avalible that are reoccuring on a particular day.
     """
+    # for all the menus avaliable on a particular week of the day
     def get(self, request, format=None):
         today = date.today().strftime('%Y-%m-%d')
         weekday = date.today().strftime('%A').lower()
-        all_menu = MenuModel.objects.filter(avaliable=True, freq_of_reocurrence__contains = ['tuesday'])
+        all_menu = MenuModel.objects.filter(avaliable=True, freq_of_reocurrence__contains = [weekday])
         serializer = MenuSerializer(all_menu, many=True)
+        return Response(serializer.data)
+
+class VendorAllMenu(APIView):
+    permission_classes = (IsAuthenticated,) 
+    """
+    List all menus avalible by vendors.
+    """
+    # for all the menus avaliable by a vendor
+    def get(self, request, pk, format=None):
+        all_vendor_menu = MenuModel.objects.filter(vendor_id = pk, avaliable=True)
+        serializer = MenuSerializer(all_vendor_menu, many=True)
         return Response(serializer.data)
 
 class Order(APIView):
@@ -63,17 +77,50 @@ class Order(APIView):
         menu_record = MenuModel.objects.filter(pk = pk ,avaliable=True)
         return menu_record
         
+    def update_balance (self, customer_obj, charge_amt):
+        old_balance = customer_obj.amount_outstanding
+        print(customer_obj.amount_outstanding)
+        new_balance = old_balance + (charge_amt)
+        user_data = {"amount_outstanding":new_balance}
+        print(user_data)
+        serializer = CustomerSerializer(customer_obj, data=user_data, partial = True)  
+        if serializer.is_valid():
+            serializer.save()
 
     def get(self, request, format=None):
-        # order = OrderModel.objects.all()
-        customer_obj = customer_details(request.user)
-        order = OrderModel.objects.filter(customer = customer_obj.id)
-        serializer = OrderSerializer(order, many=True)
-        return Response(serializer.data)
+        # collecting details for logged in user
+        current_user = request.user
+        if current_user.user_type != 2:   #check if this route is been accessed by vendor
+            message ={'message':"this resource is for customers"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+                
+        data = request.data
+        #checking if nothing was ordered
+        menus = data['items_ordered']
+        if menus == []:
+            message = {"message":"No order(s) entered"}
+            return Response(message, status = status.HTTP_400_BAD_REQUEST)
+
+        #checking for avaliable menu
+        for menu in menus:
+            avaliable_menu=self.get_available_object(menu)
+            if not avaliable_menu.exists():
+                message = {"message":f"Menu ID {menu} is not avalaible kindly remove !"}
+                return Response(message, status = status.HTTP_400_BAD_REQUEST)         
+        
+        amount_due = sum([self.get_object(menu).price for menu in menus])
+        print(amount_due)
+        message = {'message':f"total amount due {amount_due}"}
+        return Response(message, status = status.HTTP_200_OK)
+
 
     def post(self, request, format=None):
         # collecting details for logged in user
         current_user = request.user
+        if current_user.user_type != 2:   #check if this route is been accessed by vendor
+            message ={'message':"this resource is for customers"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
         customer_obj = customer_details(current_user)
         print(customer_obj.id)
 
@@ -86,7 +133,7 @@ class Order(APIView):
             message = {"message":"No order(s) made"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)
 
-        #checkin for avaliable menu
+        #checking for avaliable menu
         for menu in menus:
             avaliable_menu=self.get_available_object(menu)
             if not avaliable_menu.exists():
@@ -107,6 +154,18 @@ class Order(APIView):
         
         #calculating balance left unpaid
         balance =  paid - amount_due
+
+        #setting payment status
+        if balance == amount_due :
+            payment_status = 1              #no payment
+        elif balance < 0 :
+            payment_status = 2              #part payment
+        elif balance == 0 :
+            payment_status = 3              #full payment
+        elif balance > 0 :
+            payment_status = 4              #excess payment
+        else:
+            payment_status = 0              #None
         
         #input data for serializer
         order_data = {
@@ -115,7 +174,7 @@ class Order(APIView):
         "amount_due" : amount_due,
         "amount_paid" : data['amount_paid'],
         "amount_outstanding" : balance,
-        "paid" : True,
+        "payment_status" : payment_status,
         "vendor" : vendor_id,
         "customer" : customer_obj.id,
         "delivery_date_time" : data['delivery_date_time'],
@@ -135,8 +194,29 @@ class Order(APIView):
             notify = Notification(vendor_id,notify_message,1,cust_list)
             notify.push_notification_to_all()
 
+            #updating the customer outstanding
+            self.update_balance(customer_obj, balance)
+
             return Response(message, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrdersHistory(APIView):
+    permission_classes = (IsAuthenticated,)
+    """
+    Retrieve, History of all transactions by customer.
+    """
+    def get(self, request, format=None):
+
+        # collecting details for logged in user
+        current_user = request.user
+        if current_user.user_type != 2:   #check if this route is been accessed by vendor
+            message ={'message':"this resource is for customers"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        customer_obj = customer_details(request.user)
+        order = OrderModel.objects.filter(customer = customer_obj.id).order_by('-date_time_created')
+        serializer = OrderSerializer(order, many=True)
+        return Response(serializer.data)
 
 class CustomerOrderDetail(APIView):
     permission_classes = (IsAuthenticated,) 
@@ -149,7 +229,14 @@ class CustomerOrderDetail(APIView):
         except OrderModel.DoesNotExist:
             raise Http404
 
-    def get(self, request, pk, format=None):
+    def get(self, request, pk, format=None):      
+
+        # collecting details for logged in user
+        current_user = request.user
+        if current_user.user_type != 2:   #check if this route is been accessed by vendor
+            message ={'message':"this resource is for customers"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
         menu = self.get_object(pk)
         #checking if the order url belongs to logged in user
         cust_obj  = customer_details(request.user)
@@ -161,40 +248,73 @@ class CustomerOrderDetail(APIView):
         serializer = OrderSerializer(menu)
         return Response(serializer.data)
 
-    def put(self, request, pk, format=None):
-        menu = self.get_object(pk)
+class CancelOrder(APIView):
+    cancel_id = 7
+    charge_amt = 200
+    permission_classes = (IsAuthenticated,) 
+    """
+    To cancel a placed order.
+    """
+    def get_object(self, pk):
+        try:
+            return OrderModel.objects.get(pk=pk)
+        except OrderModel.DoesNotExist:
+            raise Http404
+    
+    def update_balance (self, customer_obj, charge_amt):
+        old_balance = customer_obj.amount_outstanding
+        print(customer_obj.amount_outstanding)
+        new_balance = old_balance -  (charge_amt)
+        user_data = {"amount_outstanding":new_balance}
+        print(user_data)
+        serializer = CustomerSerializer(customer_obj, data=user_data, partial = True)  
+        if serializer.is_valid():
+            serializer.save()
+
+    def put(self, request, pk, format=None):         
+        
+        order = self.get_object(pk)
 
         #checking if the order url belongs to logged in user
         cust_obj  = customer_details(request.user)
         print(cust_obj.id)
-        print(menu.customer_id)
-        if cust_obj.id != menu.customer_id :
+        print(order.customer_id)
+        if cust_obj.id != order.customer_id :
             message = {"message": "The Selected Order does not belong to you"}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
         
         #checking if the order has not been updated by vendor away from pending and cancel
-        print(menu.order_status_id)
-        if menu.order_status_id != 1:
-            # result = OrderModel.objects.filter(orderstatus__id = 1)
-            # result2 = OrderStatus.objects.filter(orders = menu.order_status_id)
-            # print(result)
-            message = {"message": "This Order cannot be cancelled"}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)            
-        cust_list = [menu.customer_id]
-        serializer = OrderSerializer(menu, data=request.data, partial = True)
+        print(order.order_status_id)
+        if order.order_status_id != 1:
+            status_name = OrderStatus.objects.get(pk = order.order_status_id)
+            message = {"message": f"This Order cannot be cancelled its now {status_name.name}"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        #checking if the order has not been updated by vendor away from pending and cancel
+        print(order.order_status_id)
+        now  = timezone.now()
+        if now > order.cancel_expiry :  
+            message = {"message": "This order cancellation time is expired "}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        order_status = {"order_status" : CancelOrder.cancel_id}                          
+        cust_list = [order.customer_id]
+
+        serializer = OrderSerializer(order, data=order_status, partial = True)
         
         if serializer.is_valid():
             serializer.save()
-            notify_message =f"the order with ID {menu.id} has been updated "
-            notify =Notification(menu.vendor_id,notify_message,1,cust_list)
+            #charge for cancellation
+            self.update_balance(cust_obj, CancelOrder.charge_amt)
+
+            notify_message = f"the order with ID {pk} has been cancelled by customer"
+            notify =Notification(order.vendor_id,notify_message,1,cust_list)
             notify.push_notification_to_all()
-            return Response(serializer.data)
+            message = {"message":f"the order with ID {pk} has been successfully cancelled"}
+            return Response(message, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def delete(self, request, pk, format=None):
-    #     menu = self.get_object(pk)
-    #     menu.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 def customer_details(user_email):
