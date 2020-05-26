@@ -18,7 +18,7 @@ class Auth(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     reference_id = models.CharField(max_length = 30)
-    user_type = models.IntegerField(default = 1)
+    user_type = models.IntegerField()
     date_expiry = models.DateTimeField(default = expiry_time(), blank=True)
     date_time_created = models.DateTimeField(auto_now_add=True)
 
@@ -86,7 +86,7 @@ class Orders(models.Model):
     amount_paid = models.FloatField(default = 0.00)
     amount_outstanding = models.FloatField(default = 0.00)
     payment_status = models.ForeignKey(PaymentStatus, on_delete = models.CASCADE)
-    order_status = models.ForeignKey(OrderStatus, on_delete = models.CASCADE, default=1)
+    order_status = models.ForeignKey(OrderStatus, on_delete = models.CASCADE)
     cancel_expiry = models.DateTimeField(default = expiry_time(), blank=True)
     delivery_date_time = models.DateTimeField(default = timezone.now(), blank=True)
     date_time_created = models.DateTimeField(auto_now_add=True)
