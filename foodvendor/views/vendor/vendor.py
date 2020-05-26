@@ -49,7 +49,6 @@ class Menu(APIView):
     def get(self, request, format=None):
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(vendor_obj.id)
         queryset = MenuModel.objects.filter(vendor=vendor_obj.id)
         serializer = MenuSerializer(queryset, many=True)
         # serializer = MenuSerializer(menu)
@@ -63,7 +62,6 @@ class Menu(APIView):
         data = request.data
 
         #checking if order is recurring or not
-        print(data['is_recurring'])
         if data['is_recurring'] == "True":
             menu_data = {
             "name" : data['name'],
@@ -82,8 +80,7 @@ class Menu(APIView):
             "quantity" : data['quantity'],
             "is_recurring" : data['is_recurring'],
             "vendor" : vendor_obj.id
-            }
-        print(menu_data)         
+            }     
         serializer  = MenuSerializer(data=menu_data)
         if serializer.is_valid():
             serializer.save()
@@ -109,7 +106,6 @@ class MenuDetail(APIView):
         menu = self.get_object(pk)
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(menu.vendor_id)
         if menu.vendor_id != vendor_obj.id:
             message = {"message":"This Menu does not belong to you, Preview is not Allowed"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)        
@@ -120,7 +116,6 @@ class MenuDetail(APIView):
         menu = self.get_object(pk)
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(menu.vendor_id)
         if menu.vendor_id != vendor_obj.id:
             message = {"message":"This Menu does not belong to you, Update is not Allowed"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)
@@ -134,7 +129,6 @@ class MenuDetail(APIView):
         menu = self.get_object(pk)
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(menu.vendor_id)
         if menu.vendor_id != vendor_obj.id:
             message = {"message":"This Menu does not belong to you, Delete is not Allowed"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)
@@ -156,7 +150,6 @@ class VendorOrderDetail(APIView):
         order = self.get_object(pk)
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(order.vendor_id)
         if order.vendor_id != vendor_obj.id:
             message = {"message":"This Order does not belong to you, Preview is not Allowed"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)        
@@ -167,13 +160,11 @@ class VendorOrderDetail(APIView):
         order = self.get_object(pk)
         current_user = request.user
         vendor_obj = vendor_details(current_user)
-        print(request.data)
         if len(request.data) != 1 or 'order_status' not in request.data:
             message = {"message":"you are only allowed to update order status from customer order"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)
         
         order_status = {"order_status" : request.data["order_status"]}
-        print(order_status)
         if order.vendor_id != vendor_obj.id:
             message = {"message":"This Order does not belong to you, Update is not Allowed"}
             return Response(message, status = status.HTTP_400_BAD_REQUEST)
