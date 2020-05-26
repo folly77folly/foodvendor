@@ -26,5 +26,48 @@
         "fields": {
           "name": "excess payment"
         }
+      },
+
+      {
+        "model": "foodvendor.orderstatus",
+        "pk": 1,
+        "fields": {
+          "name": "pending"
+        }
+      },
+      {
+        "model": "foodvendor.orderstatus",
+        "pk": 2,
+        "fields": {
+          "name": "in-progress"
+        }
+      },
+      {
+        "model": "foodvendor.orderstatus",
+        "pk": 6,
+        "fields": {
+          "name": "ready"
+        }
+      },
+      {
+        "model": "foodvendor.orderstatus",
+        "pk": 7,
+        "fields": {
+          "name": "cancel"
+        }
+      },
+      {
+        "model": "foodvendor.messagestatus",
+        "pk": 1,
+        "fields": {
+          "name": "vendor"
+        }
+      },
+      {
+        "model": "foodvendor.messagestatus",
+        "pk": 2,
+        "fields": {
+          "name": "customer"
+        }
       }
   ]
